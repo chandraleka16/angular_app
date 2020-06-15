@@ -1,0 +1,66 @@
+def dockerPublisherName = "chandraleka1403"
+def dockerRepoName = "angular-app"
+
+// Git Variables
+def gitRepoName = "https://github.com/chandraleka16/angular_app.git"
+def gitBranch = "master"
+
+// Custom-Image name
+def customLocalImage = "angular-app-image"
+
+// Triggers
+properties([pipelineTriggers([githubPush()])])
+
+// Pipeline script
+pipeline {
+    // Agents
+    agent {
+        // Nodes to run the job on
+        node {
+            label 'slave2'
+        }
+    }
+
+    // Stages In the pipeline
+    stages {
+        // Checkout from the Source Control
+        stage('Checkout') {
+            steps {
+                git branch: "${gitBranch}", url: "${gitRepoName}"
+            }
+        }
+
+        // Build the Docker image
+        stage('Build') {
+            steps {
+                // Remove the image if it exists.
+                sh "docker rmi ${customLocalImage} || true"
+                // Build the custom image and give a custom name.
+                sh "docker build -t ${customLocalImage} ."
+                
+            }
+        }
+
+        // Publish the image to docker registry
+        stage('Publish') {
+            steps {
+                // Tag the image with the build number
+                sh "docker tag ${customLocalImage} ${dockerPublisherName}/${dockerRepoName}:V.${BUILD_NUMBER}"
+                // Tag the image with 'latest'
+                sh "docker tag ${customLocalImage} ${dockerPublisherName}/${dockerRepoName}:latest"
+                // Push to Docker hub
+                sh "docker push ${dockerPublisherName}/${dockerRepoName}"
+
+            }
+        }
+
+        // Clean the system
+        stage('Clean') {
+            steps {
+                // Remove the custom image created.
+                sh "docker rmi ${customLocalImage} || true"
+            }
+        }
+
+    }
+}
