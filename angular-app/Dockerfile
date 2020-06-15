@@ -6,4 +6,4 @@ RUN npm install && npm run build
 # stage 2
 
 FROM nginx:alpine
-COPY --from=my-app-build /app/dist/app-to-run-inside-docker /usr/share/nginx/html
+COPY --from=my-app-build /app/dist/angular-app /usr/share/nginx/html
